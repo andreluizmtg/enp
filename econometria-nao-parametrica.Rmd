@@ -1,0 +1,190 @@
+---
+title: "econometria-nao-parametrica"
+author: "André"
+date: "2022-08-16"
+output: html_document
+---
+
+# Geração de uma semente para números aleatórios:
+
+```{r}
+set.seed(1991)
+n = 10000 # quanto maior, melhor a estimativa.
+media = 1
+desvio = 2
+x = rnorm(n,media,desvio)
+alpha = 0.01
+delta = 0.4 # 1/S<delta<1/2 (corolário p.1072 Biockel and Rosenblatt)
+Rk = 3/5
+```
+
+# Kernels:
+
+```{r}
+kr = function(x) 0.5*(abs(x)<=1) # kernel retangular
+ke = function(x) 0.75*(1-x^2)*(abs(x)<=1) # 
+kb = function(x) 0.9375*(1-x^2)^2*(abs(x)<=1)
+ks = function(x) 0.5*exp(-abs(x)/(2^.5))*sin(abs(x)/(2^.5)+pi/4) # kernel silverman 1986
+
+```
+
+
+# Estimador para densidade (f.w):
+
+$\hat{f}=\frac{1}{nh}\sum K(\frac{x_i-x}{h})$
+
+```{r}
+f.w = function(x,h,k){
+        n = length(x)
+        f1 = rep(0,n)
+        for (i in 1:n){
+          f1[i] = sum(k((x-x[i])/h))/(n*h)
+        }
+        f1
+      }
+```
+
+# Cálculo das funções kernel:
+
+```{r}
+h = 1 # bandwith/espaçamento
+fr = f.w(x,h,k=kr) #kernel retangular (uniforme)
+fe = f.w(x,h,k=ke) #kernel epanechnikov
+fb = f.w(x,h,k=kb) #kernel biweight
+fs = f.w(x,h,k=ks) #kernel silverman
+fp = 1/(desvio*sqrt(2*pi))*exp(-.5*((x-media)/desvio)^2) #kernel paramétrico (gaussiano)
+
+```
+
+# Gráficos:
+
+```{r}
+plot(sort(x), fp[order(x)], col="red", lwd=2, 
+     type="l", ylab="Densidade", xlab="x")
+lines(sort(x), fr[order(x)], col="blue", lwd=2)
+lines(sort(x), fe[order(x)], col="yellow", lwd=2)
+lines(sort(x), fb[order(x)], col="green", lwd=2)
+lines(sort(x), fs[order(x)], col="purple", lwd=2)
+  legend("topright", legend = c("Normal", "Retangular", "Epanechnikov", "Biweight", "Silverman"), col=c("red","blue","yellow","green","purple"), lty=1, cex=.8)
+
+```
+
+# Bandwidth Selection: Plug-in (Normal Distribution):
+
+```{r}
+iqr = diff(quantile(x,c(.25,.75)))/diff(qnorm(c(.25,.75)))
+h.pg = 1.06*n^(-1/5)*min(sd(x),iqr)
+f.pg = f.w(x,h=h.pg,k=ke)
+
+# testando vários valores de h:
+# f.teste = f.w(x, h=.5, k=ke)
+
+#dev.off()
+
+plot(sort(x),fp[order(x)], type="l", col=1, ylab="Densidade", xlab="x")
+lines(sort(x),f.pg[order(x)], col=2)
+legend("topright", legend = c("Normal", "Kernel Plug-in"), col = c(1,2), lty=1)
+
+# curva do f.teste:
+# lines(sort(x),f.teste[order(x)],col=4)
+
+
+```
+
+# CI CLT:
+
+```{r}
+fe = f.w(x, h=h.pg, k=ke)
+var_kde_hat = fe*Rk/(n*h.pg)
+
+z_alpha2 = qnorm(1-alpha/2)
+ci_low_clt = fe - z_alpha2*sqrt(var_kde_hat)
+ci_up_clt = fe + z_alpha2*sqrt(var_kde_hat)
+
+plot(sort(x), fe[order(x)], type = "l", col = 1, 
+     ylab = "Densidade", xlab = "x", 
+     ylim = c(min(ci_low_clt), max(ci_up_clt)))
+
+lines(sort(x), type = "l", ci_low_clt[order(x)], col = 2)
+
+lines(sort(x), type = "l", ci_up_clt[order(x)], col = 4)
+
+legend("topright", legend = c("Density", "CLT CI Upper", "CLT CI Lower"), col = c(1,4,2), lty = 1, cex = .5)
+
+```
+
+# CI Bickel and Rosenblatt:
+
+```{r}
+e_alpha = -log(-log(alpha)/2)
+sqrt_h = sqrt(-2*log(h.pg))
+aux = 2*delta*log(n)
+O = sqrt(aux)+1/aux*(log(1/(sqrt(pi))))+.5*(log(delta)+log(log(n)))
+var_br = sqrt(fe*Rk/(n*h.pg))*(O+e_alpha/sqrt_h)
+ci_low_br = fe - var_br
+ci_up_br = fe + var_br
+
+plot(sort(x), fe[order(x)], type = "l", col = 1, 
+     ylab = "Densidade", xlab = "x", 
+     ylim = c(min(ci_low_br), max(ci_up_br)))
+
+lines(sort(x), type = "l", ci_low_br[order(x)], col = 2)
+
+lines(sort(x), type = "l", ci_up_br[order(x)], col = 4)
+
+legend("topright", legend = c("Density", "BR CI Upper", "BR CI Lower"), 
+       col = c(1,4,2), lty = 1, cex = .5)
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
