@@ -1,6 +1,6 @@
 ---
 title: "econometria-nao-parametrica"
-author: "André"
+author: "André Luiz"
 date: "2022-08-16"
 output: html_document
 ---
