@@ -9,7 +9,7 @@ output: html_document
 
 ```{r}
 set.seed(1991)
-n = 10000 # quanto maior, melhor a estimativa.
+n = 1000 # quanto maior, melhor a estimativa.
 media = 1
 desvio = 2
 x = rnorm(n,media,desvio)
